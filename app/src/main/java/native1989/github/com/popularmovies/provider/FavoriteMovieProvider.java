@@ -13,7 +13,9 @@ import android.net.Uri;
 import native1989.github.com.popularmovies.database.FavoriteData;
 
 /**
- * ContentProvider for favorites media
+ * ContentProvider for favorites media.
+ * Based on
+ * http://www.grokkingandroid.com/android-tutorial-writing-your-own-content-provider/
  * Created by Anton on 6/15/2015.
  */
 public class FavoriteMovieProvider extends ContentProvider {
