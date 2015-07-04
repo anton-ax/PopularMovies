@@ -13,8 +13,8 @@
         <Spinner
             android:id="@+id/filter"
             android:layout_width="wrap_content"
-            android:entries="@array/filter"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:entries="@array/filter" />
 
     </android.support.v7.widget.Toolbar>
 
@@ -26,7 +26,7 @@
 
     <ProgressBar
         android:id="@+id/loader"
-        android:layout_centerInParent="true"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true" />
 </RelativeLayout>

@@ -5,21 +5,21 @@ import com.google.gson.annotations.Expose;
 import java.util.List;
 
 /**
- * Created by Anton on 6/7/2015.
+ * Created by Anton on 7/4/2015.
  */
-public class MoviePager {
+public class ReviewPager {
 
     @Expose
     private Integer page;
 
     @Expose
-    private List<Movie> results;
+    private List<Review> results;
 
-    public List<Movie> getResults() {
+    public List<Review> getResults() {
         return results;
     }
 
-    public void setResults(List<Movie> results) {
+    public void setResults(List<Review> results) {
         this.results = results;
     }
 }

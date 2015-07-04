@@ -1,8 +1,11 @@
 package native1989.github.com.popularmovies.rest;
 
 import native1989.github.com.popularmovies.model.MoviePager;
+import native1989.github.com.popularmovies.model.ReviewPager;
+import native1989.github.com.popularmovies.model.TrailerPager;
 import retrofit.Callback;
 import retrofit.http.GET;
+import retrofit.http.Path;
 import retrofit.http.Query;
 
 /**
@@ -17,4 +20,10 @@ public interface ThemoviedbService {
 
     @GET("/3/discover/movie?api_key=" + ACCESS_TOKEN)
     void listMovies(@Query("sort_by") String sort, Callback<MoviePager> response);
+
+    @GET("/3/movie/{id}/videos?api_key=" + ACCESS_TOKEN)
+    void movieTrailers(@Path("id") Integer id, Callback<TrailerPager> response);
+
+    @GET("/3/movie/{id}/reviews?api_key=" + ACCESS_TOKEN)
+    void movieReviews(@Path("id") Integer id, Callback<ReviewPager> response);
 }

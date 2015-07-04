@@ -1,10 +1,6 @@
 package native1989.github.com.popularmovies.adapter;
 
-import android.app.Activity;
-import android.app.ActivityOptions;
-import android.content.Context;
-import android.content.Intent;
-import android.os.Build;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,35 +11,49 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import native1989.github.com.popularmovies.MovieActivity;
 import native1989.github.com.popularmovies.R;
 import native1989.github.com.popularmovies.model.Movie;
-import native1989.github.com.popularmovies.ui.PosterImageView;
 
 /**
  * Created by Anton on 6/7/2015.
  */
-public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> {
+public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
 
-    private final Context context;
+    private final AppCompatActivity context;
     private ArrayList<Movie> items;
+    private OnItemClickListener mItemClickListener;
 
-    public MovieAdapter(Context context) {
+    public MovieAdapter(AppCompatActivity context) {
         this.items = new ArrayList<>();
         this.context = context;
     }
 
-    @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int i) {
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.movie_poster, parent, false);
-
-        return new ViewHolder(v);
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.mItemClickListener = listener;
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder viewHolder, int position) {
+    public MovieHolder onCreateViewHolder(ViewGroup parent, int i) {
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.movie_poster, parent, false);
+
+        return new MovieHolder(v);
+    }
+
+    @Override
+    public void onBindViewHolder(final MovieHolder viewHolder, final int position) {
         Movie movie = items.get(position);
+        viewHolder.movie = movie;
+        viewHolder.container.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                if (mItemClickListener != null) {
+                    mItemClickListener.onItemClick(view, viewHolder);
+                }
+            }
+        });
+
         Picasso.with(context)
                 .load("http://image.tmdb.org/t/p/w185/" + movie.getPoster_path())
                 .placeholder(R.drawable.preloader)
@@ -62,31 +72,5 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.ViewHolder> 
     public void clear() {
         items.clear();
         notifyDataSetChanged();
-    }
-
-    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
-        public PosterImageView poster;
-
-        public ViewHolder(View itemView) {
-            super(itemView);
-            poster = (PosterImageView) itemView.findViewById(R.id.poster);
-            poster.setOnClickListener(this);
-        }
-
-        @Override
-        public void onClick(View v) {
-            Intent intent = new Intent(context, MovieActivity.class);
-            intent.putExtra("movie", items.get(getAdapterPosition()));
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                String transitionName = context.getString(R.string.movie_poster);
-                ActivityOptions transitionActivityOptions = ActivityOptions
-                        .makeSceneTransitionAnimation((Activity) context, poster, transitionName);
-                context.startActivity(intent, transitionActivityOptions.toBundle());
-            } else {
-                context.startActivity(intent);
-            }
-        }
     }
 }

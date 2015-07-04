@@ -4,9 +4,6 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.ImageView;
 
-/**
- * An image view which always remains square with respect to its width.
- */
 public final class PosterImageView extends ImageView {
     public PosterImageView(Context context) {
         super(context);

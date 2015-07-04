@@ -13,14 +13,16 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".MovieActivity" />
+
+        <provider
+            android:name=".provider.FavoriteMovieProvider"
+            android:authorities="native1989.github.com.popularmovies" />
     </application>
 
 </manifest>

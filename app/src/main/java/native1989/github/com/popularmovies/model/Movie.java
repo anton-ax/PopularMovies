@@ -25,7 +25,11 @@ public class Movie implements Parcelable {
     @Expose
     private String backdrop_path;
 
-    @Expose String release_date;
+    @Expose
+    String release_date;
+
+    public Movie() {
+    }
 
     private Movie(Parcel in) {
         id = in.readInt();
