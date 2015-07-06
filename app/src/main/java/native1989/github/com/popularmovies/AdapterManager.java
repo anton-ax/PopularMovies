@@ -1,7 +1,5 @@
 package native1989.github.com.popularmovies;
 
-import android.os.Parcelable;
-
 import java.util.ArrayList;
 
 import native1989.github.com.popularmovies.model.Movie;
