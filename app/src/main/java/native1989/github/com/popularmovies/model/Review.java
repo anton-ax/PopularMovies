@@ -1,11 +1,14 @@
 package native1989.github.com.popularmovies.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.google.gson.annotations.Expose;
 
 /**
  * Created by Anton on 7/4/2015.
  */
-public class Review {
+public class Review implements Parcelable {
 
     @Expose
     private String id;
@@ -21,6 +24,24 @@ public class Review {
 
     public Review() {
     }
+
+    private Review(Parcel in) {
+        id = in.readString();
+        author = in.readString();
+        content = in.readString();
+        url = in.readString();
+    }
+
+    public static final Parcelable.Creator<Review> CREATOR
+            = new Parcelable.Creator<Review>() {
+        public Review createFromParcel(Parcel in) {
+            return new Review(in);
+        }
+
+        public Review[] newArray(int size) {
+            return new Review[size];
+        }
+    };
 
     public String getId() {
         return id;
@@ -52,5 +73,18 @@ public class Review {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(id);
+        out.writeString(author);
+        out.writeString(content);
+        out.writeString(url);
     }
 }

@@ -2,6 +2,7 @@ package native1989.github.com.popularmovies.model;
 
 import com.google.gson.annotations.Expose;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,13 +14,13 @@ public class TrailerPager {
     private Integer page;
 
     @Expose
-    private List<Trailer> results;
+    private ArrayList<Trailer> results;
 
-    public List<Trailer> getResults() {
+    public ArrayList<Trailer> getResults() {
         return results;
     }
 
-    public void setResults(List<Trailer> results) {
+    public void setResults(ArrayList<Trailer> results) {
         this.results = results;
     }
 }

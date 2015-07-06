@@ -4,8 +4,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.support.v7.widget.RecyclerView;
 
+import java.util.ArrayList;
+
 import native1989.github.com.popularmovies.adapter.FavoritesAdapter;
 import native1989.github.com.popularmovies.adapter.OnItemClickListener;
+import native1989.github.com.popularmovies.model.Movie;
 import native1989.github.com.popularmovies.provider.FavoriteMovieProvider;
 
 /**
@@ -26,6 +29,18 @@ public class ContentAdapterManager extends AdapterManager {
 
     @Override
     public void fillData(String param) {
+        // we doesn't have any delay so we can call onPostExecute immediately;
+        callback.onPostExecute();
+    }
 
+    @Override
+    public ArrayList<Movie> movieList() {
+        return null;
+    }
+
+    @Override
+    public void recreate(ArrayList<Movie> movies) {
+        // it will never call, cause we don't save adapter state
+        callback.onPostExecute();
     }
 }

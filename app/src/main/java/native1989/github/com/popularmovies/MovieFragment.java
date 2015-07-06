@@ -8,6 +8,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -19,12 +20,13 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import native1989.github.com.popularmovies.model.Movie;
 import native1989.github.com.popularmovies.model.Review;
@@ -54,24 +56,24 @@ public class MovieFragment extends Fragment implements
     private String firstTrailer;
     private MenuItem item;
 
+    private ArrayList<Review> reviews;
+    private ArrayList<Trailer> trailers;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.movie_fragment, container, false);
 
         Toolbar toolbar = (Toolbar) view.findViewById(R.id.toolbar);
-
-        AppCompatActivity activity = (AppCompatActivity) getActivity();
-        activity.setSupportActionBar(toolbar);
+        ((AppCompatActivity) getActivity()).setSupportActionBar(toolbar);
         setHasOptionsMenu(true);
-        if (activity.getSupportActionBar() != null) {
-            activity.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            activity.getSupportActionBar().setDisplayShowTitleEnabled(false);
+        ActionBar supportActionBar = ((AppCompatActivity) getActivity()).getSupportActionBar();
+        if (supportActionBar != null) {
+            supportActionBar.setDisplayHomeAsUpEnabled(true);
+            supportActionBar.setDisplayShowTitleEnabled(false);
         }
-
         ImageView backdrop = (ImageView) view.findViewById(R.id.backdrop);
         PosterImageView poster = (PosterImageView) view.findViewById(R.id.poster);
-
 
         trailersView = (LinearLayout) view.findViewById(R.id.trailers);
         reviewsView = (LinearLayout) view.findViewById(R.id.reviews);
@@ -99,14 +101,18 @@ public class MovieFragment extends Fragment implements
             String formattedDate = dateFormat.format(new Date(releaseDate));
             date.setText(formattedDate);
 
-            Picasso.with(getActivity())
-                    .load("http://image.tmdb.org/t/p/w780/" + movie.getBackdrop_path())
-                    .into(backdrop);
+            if (movie.getBackdrop_path() != null) {
+                Picasso.with(getActivity())
+                        .load("http://image.tmdb.org/t/p/w780/" + movie.getBackdrop_path())
+                        .into(backdrop);
+            }
 
-            Picasso.with(getActivity())
-                    .load("http://image.tmdb.org/t/p/w185/" + movie.getPoster_path())
-                    .placeholder(R.drawable.preloader)
-                    .into(poster);
+            if (movie.getPoster_path() != null) {
+                Picasso.with(getActivity())
+                        .load("http://image.tmdb.org/t/p/w185/" + movie.getPoster_path())
+                        .placeholder(R.drawable.preloader)
+                        .into(poster);
+            }
 
             Cursor uri = getActivity().getContentResolver().query(
                     FavoriteMovieProvider.CONTENT_URI, null, "id=?",
@@ -117,24 +123,51 @@ public class MovieFragment extends Fragment implements
             }
             updateActionButton();
 
-            RestAdapter restAdapter = new RestAdapter.Builder()
-                    .setEndpoint("http://api.themoviedb.org")
-                    .build();
+            if (savedInstanceState != null) {
+                if (savedInstanceState.containsKey("trailers")) {
+                    trailers = savedInstanceState.getParcelableArrayList("trailers");
+                    displayTrailers();
+                }
+                if (savedInstanceState.containsKey("reviews")) {
+                    reviews = savedInstanceState.getParcelableArrayList("reviews");
+                    displayReviews();
+                }
 
-            service = restAdapter.create(ThemoviedbService.class);
+            }
+            if (trailers == null || reviews == null) {
+                RestAdapter restAdapter = new RestAdapter.Builder()
+                        .setEndpoint("http://api.themoviedb.org")
+                        .build();
 
-            retrieveTrailers();
-            retrieveReviews();
+                service = restAdapter.create(ThemoviedbService.class);
+                if (trailers == null) {
+                    retrieveTrailers();
+                }
+                if (reviews == null) {
+                    retrieveReviews();
+                }
+            }
         }
         return view;
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+
+        // save trailers and reviews
+        outState.putParcelableArrayList("trailers", trailers);
+        outState.putParcelableArrayList("reviews", reviews);
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        menu.clear();
         inflater.inflate(R.menu.movie_menu, menu);
         item = menu.findItem(R.id.share);
-        item.setVisible(false);
-        super.onCreateOptionsMenu(menu, inflater);
+        if(trailers == null) {
+            item.setVisible(false);
+        }
     }
 
     private void retrieveReviews() {
@@ -142,13 +175,8 @@ public class MovieFragment extends Fragment implements
 
             @Override
             public void success(ReviewPager pager, Response response) {
-                List<Review> results = pager.getResults();
-                if (results.size() > 0) {
-                    reviewsView.setVisibility(View.VISIBLE);
-                    for (Review review : results) {
-                        displayReview(review);
-                    }
-                }
+                reviews = pager.getResults();
+                displayReviews();
             }
 
             @Override
@@ -159,17 +187,20 @@ public class MovieFragment extends Fragment implements
         service.movieReviews(movie.getId(), requestCallback);
     }
 
-    private void displayReview(Review review) {
-        if (getActivity() != null) {
-            LinearLayout reviewLayout = (LinearLayout) getActivity().getLayoutInflater()
-                    .inflate(R.layout.review_item, trailersView, false);
+    private void displayReviews() {
+        if (reviews.size() > 0) {
+            reviewsView.setVisibility(View.VISIBLE);
+            for (Review review : reviews) {
+                LinearLayout reviewLayout = (LinearLayout) getActivity().getLayoutInflater()
+                        .inflate(R.layout.review_item, trailersView, false);
 
-            TextView author = (TextView) reviewLayout.findViewById(R.id.author);
-            author.setText(review.getAuthor());
+                TextView author = (TextView) reviewLayout.findViewById(R.id.author);
+                author.setText(review.getAuthor());
 
-            TextView content = (TextView) reviewLayout.findViewById(R.id.content);
-            content.setText(review.getContent());
-            reviewsView.addView(reviewLayout);
+                TextView content = (TextView) reviewLayout.findViewById(R.id.content);
+                content.setText(review.getContent());
+                reviewsView.addView(reviewLayout);
+            }
         }
     }
 
@@ -178,19 +209,8 @@ public class MovieFragment extends Fragment implements
 
             @Override
             public void success(TrailerPager pager, Response response) {
-                List<Trailer> results = pager.getResults();
-                if (results.size() > 0) {
-                    trailersView.setVisibility(View.VISIBLE);
-                    boolean first = true;
-                    for (Trailer trailer : results) {
-                        if (first) {
-                            firstTrailer = trailer.getKey();
-                            item.setVisible(true);
-                            first = false;
-                        }
-                        displayTrailer(trailer);
-                    }
-                }
+                trailers = pager.getResults();
+                displayTrailers();
             }
 
             @Override
@@ -201,19 +221,31 @@ public class MovieFragment extends Fragment implements
         service.movieTrailers(movie.getId(), requestCallback);
     }
 
-    private void displayTrailer(final Trailer trailer) {
-        if (getActivity() != null) {
-            TextView trailerText = (TextView) getActivity().getLayoutInflater()
-                    .inflate(R.layout.trailer_item, trailersView, false);
+    private void displayTrailers() {
 
-            trailerText.setText(trailer.getName());
-            trailerText.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    open(trailer.getKey());
+        if (trailers.size() > 0) {
+            trailersView.setVisibility(View.VISIBLE);
+            boolean first = true;
+            for (final Trailer trailer : trailers) {
+                if (first) {
+                    firstTrailer = trailer.getKey();
+                    if (item != null) {
+                        item.setVisible(true);
+                    }
+                    first = false;
                 }
-            });
-            trailersView.addView(trailerText);
+                TextView trailerText = (TextView) getActivity().getLayoutInflater()
+                        .inflate(R.layout.trailer_item, trailersView, false);
+
+                trailerText.setText(trailer.getName());
+                trailerText.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        open(trailer.getKey());
+                    }
+                });
+                trailersView.addView(trailerText);
+            }
         }
     }
 
@@ -261,7 +293,11 @@ public class MovieFragment extends Fragment implements
     private void open(String key) {
         String urlToShare = "https://www.youtube.com/watch?v=" + key;
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(urlToShare));
-        startActivity(intent);
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Toast.makeText(getActivity(), "Cannot open trailer", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void share(String key) {
@@ -270,6 +306,10 @@ public class MovieFragment extends Fragment implements
         intent.setType("text/plain");
         intent.putExtra(Intent.EXTRA_TEXT, urlToShare);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+            startActivity(intent);
+        } else {
+            Toast.makeText(getActivity(), "Cannot share trailer", Toast.LENGTH_SHORT).show();
+        }
     }
 }

@@ -22,6 +22,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
+
                 <ImageView
                     android:id="@+id/backdrop"
                     android:layout_width="match_parent"
@@ -53,8 +54,7 @@
                         android:background="#263238"
                         android:contentDescription="@string/backdrop"
                         android:padding="2dp"
-                        android:src="@drawable/preloader"
-                        android:transitionName="@string/movie_poster" />
+                        android:src="@drawable/preloader"/>
 
                     <TextView
                         android:id="@+id/title"

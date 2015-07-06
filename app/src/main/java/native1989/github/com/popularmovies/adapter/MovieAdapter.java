@@ -67,10 +67,15 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieHolder> {
 
     public void addAll(Collection<? extends Movie> movies) {
         items.addAll(movies);
+        notifyDataSetChanged();
     }
 
     public void clear() {
         items.clear();
         notifyDataSetChanged();
+    }
+
+    public ArrayList<Movie> getList() {
+        return items;
     }
 }

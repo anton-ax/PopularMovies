@@ -1,21 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/frags"
+    android:id="@+id/dual_pane"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:baselineAligned="false">
 
-    <fragment
-        android:id="@+id/movie_list"
-        class="native1989.github.com.popularmovies.MainActivityFragment"
+    <FrameLayout
+        android:id="@+id/master_dual"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
     <FrameLayout
-        android:id="@+id/fragment_container"
+        android:id="@+id/detail_dual"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-    </FrameLayout>
+        android:layout_height="match_parent" />
 
 </RelativeLayout>

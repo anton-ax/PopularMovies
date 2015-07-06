@@ -1,6 +1,5 @@
 package native1989.github.com.popularmovies;
 
-import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -10,7 +9,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.transition.TransitionInflater;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +16,8 @@ import android.widget.AdapterView;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import java.util.ArrayList;
 
 import native1989.github.com.popularmovies.adapter.MovieHolder;
 import native1989.github.com.popularmovies.adapter.OnItemClickListener;
@@ -29,16 +29,16 @@ import native1989.github.com.popularmovies.ui.ColumnSpaceDecoration;
  * A main fragment
  */
 public class MainActivityFragment extends Fragment implements
-        AdapterView.OnItemSelectedListener, AdapterManagerCallback, OnItemClickListener, View.OnLayoutChangeListener {
+        AdapterManagerCallback, OnItemClickListener, AdapterView.OnItemSelectedListener {
 
-    private static final int LANDSCAPE_COLUMN_COUNT = 5;//5
-    private static final int PORTRAIT_COLUMN_COUNT = 3;
     private static final int COLUMN_SPACING = 2;
 
     private RecyclerView grid;
     private ProgressBar loader;
+    private int filterPosition;
 
-    private GridLayoutManager gridLayoutManager;
+    private AdapterManager adapterManager;
+    private boolean firstTime;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -47,78 +47,90 @@ public class MainActivityFragment extends Fragment implements
 
         grid = (RecyclerView) view.findViewById(R.id.grid);
         grid.setHasFixedSize(true);
+        firstTime = true;
 
         grid.addItemDecoration(new ColumnSpaceDecoration(COLUMN_SPACING));
 
         loader = (ProgressBar) view.findViewById(R.id.loader);
 
         Spinner filter = (Spinner) view.findViewById(R.id.filter);
+
+
+        if (savedInstanceState != null) {
+
+            if (savedInstanceState.containsKey("filterPosition")) {
+                filterPosition = savedInstanceState.getInt("filterPosition");
+            }
+            filter.setSelection(filterPosition);
+            setAdapter(filterPosition, false);
+            if (savedInstanceState.containsKey("movies")) {
+                ArrayList<Movie> movies = savedInstanceState.getParcelableArrayList("movies");
+                adapterManager.recreate(movies);
+            } else {
+                loader.setVisibility(View.INVISIBLE);
+            }
+        } else {
+            setAdapter(0, true);
+        }
         filter.setOnItemSelectedListener(this);
 
-        view.addOnLayoutChangeListener(this);
         return view;
     }
 
-    @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        int currentOrientation = getResources().getConfiguration().orientation;
-
-        if (Util.isTablet(getActivity())
-                && getActivity().getSupportFragmentManager().getBackStackEntryCount() != 0) {
-            Fragment movieList = getActivity().getSupportFragmentManager()
-                    .findFragmentById(R.id.movie_list);
-            ViewGroup.LayoutParams params = movieList.getView().getLayoutParams();
-            DisplayMetrics metrics = new DisplayMetrics();
-            getActivity().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-            params.width = getActivity().getResources()
-                    .getDimensionPixelSize(R.dimen.titles_size);
-            movieList.getView().setLayoutParams(params);
-            gridLayoutManager = new GridLayoutManager(getActivity(), PORTRAIT_COLUMN_COUNT);
-            grid.setLayoutManager(gridLayoutManager);
-        } else {
-            adjustColumnCount(currentOrientation);
-        }
-    }
-
-    private void adjustColumnCount(int currentOrientation) {
-        int columnCount;
-        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
-            columnCount = LANDSCAPE_COLUMN_COUNT;
-        } else {
-            columnCount = PORTRAIT_COLUMN_COUNT;
-        }
-
-        gridLayoutManager = new GridLayoutManager(getActivity(), columnCount);
-        grid.setLayoutManager(gridLayoutManager);
-    }
-
-    @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+    private void setAdapter(int position, boolean fill) {
+        String filter = null;
         switch (position) {
             case 0:
-                AdapterManager adapterManager = new NetworkAdapterManager((AppCompatActivity) getActivity(),
+                adapterManager = new NetworkAdapterManager((AppCompatActivity) getActivity(),
                         grid, this);
-                adapterManager.addCallbackListener(this);
-                adapterManager.fillData(ThemoviedbService.POPULARITY);
+                filter = ThemoviedbService.POPULARITY;
                 break;
             case 1:
                 adapterManager = new NetworkAdapterManager((AppCompatActivity) getActivity(),
                         grid, this);
-                adapterManager.addCallbackListener(this);
-                adapterManager.fillData(ThemoviedbService.VOTE);
+                filter = ThemoviedbService.VOTE;
                 break;
             case 2:
                 adapterManager = new ContentAdapterManager(getActivity(),
                         grid, this);
-                adapterManager.addCallbackListener(this);
+                filter = "stub";
                 break;
         }
+        adapterManager.addCallbackListener(this);
+        if (fill && filter != null) {
+            adapterManager.fillData(filter);
+        }
+    }
+
+
+    @Override
+    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+        if (!firstTime) {
+            if (filterPosition != position) {
+                filterPosition = position;
+                setAdapter(position, true);
+            }
+        }
+        firstTime = false;
+
     }
 
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        adjustColumnCount();
+    }
+
+    private void adjustColumnCount() {
+        int columnCount = getResources().getInteger(R.integer.column_count);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(getActivity(), columnCount);
+        grid.setLayoutManager(gridLayoutManager);
     }
 
     @Override
@@ -149,7 +161,8 @@ public class MainActivityFragment extends Fragment implements
 
         String transitionName = String.valueOf(movie.getId());
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
+                !Util.isTablet(getActivity())) {
             setSharedElementReturnTransition(TransitionInflater.from(getActivity().getApplicationContext())
                     .inflateTransition(R.transition.move));
             setReturnTransition(TransitionInflater.from(getActivity())
@@ -168,43 +181,26 @@ public class MainActivityFragment extends Fragment implements
         FragmentTransaction fragmentTransaction = supportFragmentManager
                 .beginTransaction();
 
-        fragmentTransaction.add(R.id.fragment_container, fragment);
-        if (!Util.isTablet(getActivity())) {
-            fragmentTransaction.hide(this);
+        if (getActivity().findViewById(R.id.dual_pane) != null) {
+            fragmentTransaction.add(R.id.detail_dual, fragment, MainActivity.DETAIL_FRAGMENT);
         } else {
-            if (getActivity().getResources().getConfiguration().orientation
-                    == Configuration.ORIENTATION_LANDSCAPE) {
-                if (this.getView() != null) {
-                    ViewGroup.LayoutParams params = this.getView().getLayoutParams();
-                    params.width = getActivity().getResources()
-                            .getDimensionPixelSize(R.dimen.titles_size);
-                    this.getView().setLayoutParams(params);
-                }
-            }
+            fragmentTransaction.hide(this);
+            fragmentTransaction.add(R.id.single_pane, fragment, MainActivity.DETAIL_FRAGMENT);
         }
-
-        fragmentTransaction.addToBackStack("movie");
-        fragmentTransaction.addSharedElement(movieHolder.poster, transitionName)
-                .commit();
+        fragmentTransaction.addToBackStack(MainActivity.DETAIL_FRAGMENT);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP &&
+                !Util.isTablet(getActivity())) {
+            fragmentTransaction.addSharedElement(movieHolder.poster, transitionName);
+        }
+        fragmentTransaction.commit();
     }
 
-    /*
-        Tablet specific code.
-        If second fragment has been opened in landscape mode, we need
-        shrink RecyclerView
-     */
     @Override
-    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
-                               int oldTop, int oldRight, int oldBottom) {
-
-        if (oldRight != right && oldRight != 0 &&
-                getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            if (oldRight < right) {
-                gridLayoutManager.setSpanCount(LANDSCAPE_COLUMN_COUNT);
-            } else {
-                gridLayoutManager.setSpanCount(PORTRAIT_COLUMN_COUNT);
-            }
-            grid.invalidateItemDecorations();
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt("filterPosition", filterPosition);
+        if (adapterManager != null && adapterManager.movieList() != null) {
+            outState.putParcelableArrayList("movies", adapterManager.movieList());
         }
     }
 }

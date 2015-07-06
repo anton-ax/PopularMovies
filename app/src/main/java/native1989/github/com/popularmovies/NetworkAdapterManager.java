@@ -3,6 +3,7 @@ package native1989.github.com.popularmovies;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import native1989.github.com.popularmovies.adapter.MovieAdapter;
@@ -69,7 +70,6 @@ public class NetworkAdapterManager extends AdapterManager {
                 if (!isCanceled()) {
                     List<Movie> results = pager.getResults();
                     adapter.addAll(results);
-                    adapter.notifyDataSetChanged();
                 }
                 callback.onPostExecute();
             }
@@ -81,5 +81,16 @@ public class NetworkAdapterManager extends AdapterManager {
         };
 
         service.listMovies(sort, requestCallback);
+    }
+
+    @Override
+    public ArrayList<Movie> movieList() {
+        return adapter.getList();
+    }
+
+    @Override
+    public void recreate(ArrayList<Movie> movies) {
+        adapter.addAll(movies);
+        callback.onPostExecute();
     }
 }

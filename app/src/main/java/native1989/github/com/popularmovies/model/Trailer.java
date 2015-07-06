@@ -1,11 +1,14 @@
 package native1989.github.com.popularmovies.model;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import com.google.gson.annotations.Expose;
 
 /**
  * Created by Anton on 7/4/2015.
  */
-public class Trailer {
+public class Trailer implements Parcelable {
 
     @Expose
     private String id;
@@ -27,6 +30,26 @@ public class Trailer {
 
     public Trailer() {
     }
+
+    private Trailer(Parcel in) {
+        id = in.readString();
+        key = in.readString();
+        name = in.readString();
+        site = in.readString();
+        size = in.readInt();
+        type = in.readString();
+    }
+
+    public static final Parcelable.Creator<Trailer> CREATOR
+            = new Parcelable.Creator<Trailer>() {
+        public Trailer createFromParcel(Parcel in) {
+            return new Trailer(in);
+        }
+
+        public Trailer[] newArray(int size) {
+            return new Trailer[size];
+        }
+    };
 
     public String getId() {
         return id;
@@ -74,5 +97,20 @@ public class Trailer {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel out, int flags) {
+        out.writeString(id);
+        out.writeString(key);
+        out.writeString(name);
+        out.writeString(site);
+        out.writeInt(size);
+        out.writeString(type);
     }
 }
